@@ -1,30 +1,3 @@
-"""
-chunker.py
-----------
-Step 2 of the OmniBrain ingestion pipeline.
-
-Splits per-page text into overlapping chunks suitable for embedding.
-
-Why chunk at all?
-  - Embedding models have limited context and lose precision on very
-    long inputs (a whole page mixes multiple topics).
-  - Smaller, semantically coherent chunks give more precise retrieval:
-    the vector search returns the *specific* paragraph relevant to the
-    query, not an entire page of mixed content.
-
-Why RecursiveCharacterTextSplitter?
-  - It tries to split on the "most natural" boundary first (paragraph
-    breaks), and only falls back to sentence/word/character splits if
-    a paragraph is too long. This keeps chunks readable and coherent,
-    rather than cutting mid-sentence like a naive fixed-size splitter.
-
-Overlap (chunk_overlap) matters for financial documents specifically:
-  a sentence like "...revenue grew 12% year-over-year, driven primarily
-  by..." often gets split mid-thought. Overlap ensures the tail of one
-  chunk reappears at the head of the next, so the SQL/Search agents
-  don't lose that connecting context.
-"""
-
 from dataclasses import dataclass, asdict
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -43,14 +16,7 @@ def chunk_pages(
     chunk_size: int = 500,
     chunk_overlap: int = 50,
 ) -> list[TextChunk]:
-    """
-    pages: list of dicts like {"page_number": int, "text": str, "source_file": str}
-           (this is exactly what pdf_parser.parse_pdf()["pages"] gives you)
 
-    chunk_size / chunk_overlap are in characters here (simplest to reason
-    about for week 1). You can switch to a token-based length function
-    later once you've picked your embedding model's tokenizer.
-    """
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -65,7 +31,7 @@ def chunk_pages(
         text = page["text"].strip()
 
         if not text:
-            continue  # skip blank pages (common on section-divider pages)
+            continue  
 
         raw_chunks = splitter.split_text(text)
 
@@ -85,7 +51,6 @@ def chunk_pages(
 
 
 if __name__ == "__main__":
-    # quick manual smoke test
     sample_pages = [
         {
             "page_number": 1,
