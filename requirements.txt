@@ -1,0 +1,4 @@
+pymupdf
+pdfplumber
+langchain-text-splitters
+pillow
