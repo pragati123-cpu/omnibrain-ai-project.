@@ -1,28 +1,81 @@
 import streamlit as st
 
-st.set_page_config(page_title="OmniBrain UI", page_icon="🧠", layout="wide")
 
-st.title("🧠 OmniBrain: Agentic Multi-Modal RAG")
-st.write("Welcome to the chat interface. Ask questions about your financial documents.")
+# -----------------------------
+# Page Configuration
+# -----------------------------
+st.set_page_config(
+    page_title="OmniBrain Chat",
+    page_icon="🤖",
+    layout="wide"
+)
 
+
+# -----------------------------
+# Header
+# -----------------------------
+st.title("🤖 OmniBrain")
+st.caption("AI-powered document assistant")
+
+
+# -----------------------------
+# Initialize Chat History
+# -----------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+
+# -----------------------------
+# Render Chat History
+# -----------------------------
 for message in st.session_state.messages:
+
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if user_query := st.chat_input("Ask something about your document..."):
-    st.session_state.messages.append({"role": "user", "content": user_query})
-    with st.chat_message("user"):
-        st.markdown(user_query)
 
+# -----------------------------
+# Chat Input
+# -----------------------------
+user_prompt = st.chat_input(
+    "Ask OmniBrain something..."
+)
+
+
+# -----------------------------
+# Handle User Message
+# -----------------------------
+if user_prompt:
+
+    # Store user message
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": user_prompt
+        }
+    )
+
+    # Render user message
+    with st.chat_message("user"):
+        st.markdown(user_prompt)
+
+
+    # Temporary assistant response
+    assistant_response = (
+        "This is a demo response. "
+        "The OmniBrain backend will be connected later."
+    )
+
+
+    # Store assistant response
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": assistant_response
+        }
+    )
+
+
+    # Render assistant response
     with st.chat_message("assistant"):
-        thought_process = "Thinking: Analyzing the query and fetching data from vector database..."
-        response_text = f"Here is the answer based on your query: '{user_query}'"
-        
-        with st.expander("Agent's Thought Process"):
-            st.write(thought_process)
-            
-        st.markdown(response_text)
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
+        st.markdown(assistant_response)
