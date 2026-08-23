@@ -1,19 +1,24 @@
-from fastapi import FastAPI, UploadFile, File
-from pydantic import BaseModel
+from src.graph import build_graph
 
-app = FastAPI(title="OmniBrain API", description="Backend for Agentic Multi-Modal RAG")
 
-class QueryRequest(BaseModel):
-    query: str
+def main():
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to OmniBrain API Scaffolding"}
+    graph = build_graph()
 
-@app.post("/upload/")
-async def upload_document(file: UploadFile = File(...)):
-    return {"filename": file.filename, "message": "File uploaded successfully"}
+    initial_state = {
+        "messages": [],
+        "next": "",
+        "current_agent": "",
+        "task": "Test multi-step agent workflow",
+        "result": "",
+        "step_count": 0,
+    }
 
-@app.post("/query/")
-async def ask_query(request: QueryRequest):
-    return {"query": request.query, "response": "This is a placeholder response from API scaffolding."}
+    result = graph.invoke(initial_state)
+
+    print("\nFinal state:")
+    print(result)
+
+
+if __name__ == "__main__":
+    main()
