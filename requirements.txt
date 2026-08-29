@@ -2,6 +2,7 @@ qdrant-client
 sentence-transformers
 torch
 Pillow
+langgraph
 openai
 ollama
 git+https://github.com/openai/CLIP.git
