@@ -13,3 +13,4 @@ print(response)
 print("\n--- Test 2 ---")
 response = rails.generate(messages=[{"role": "user", "content": "What is the weather today?"}])
 print(response)
+

@@ -1,21 +1,20 @@
 define user express greeting
-  "hello"
   "hi"
+  "hello"
   "hey"
 
 define bot express greeting
-  "Hello! I am OmniBrain, your specialized multi-modal document assistant. How can I help you analyze your documents today?"
+  "Hello! I am your AI assistant. How can I help you with the provided documents?"
 
-define user ask outside scope
-  "what is the weather today?"
+define user ask out of scope
+  "what is the capital of France?"
+  "who won the cricket world cup?"
   "tell me a joke"
-  "who won the cricket match"
-  "write a python script for sorting"
+  "weather today"
 
-define bot express restricted scope
-  "I am strictly restricted to answering questions and providing analysis based solely on your ingested documents. I cannot answer queries outside this scope."
+define bot refuse out of scope
+  "I am strictly restricted to answering questions based solely on the provided ingested documents."
 
-define flow handle outside scope 
-  user ask outside scope
-  bot express restricted scope
-  
+define flow
+  user ask out of scope
+  bot refuse out of scope
