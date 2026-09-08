@@ -6,6 +6,10 @@ define user express greeting
 define bot express greeting
   "Hello! I am your AI assistant. How can I help you with the provided documents?"
 
+define flow
+  user express greeting
+  bot express greeting
+
 define user ask out of scope
   "what is the capital of France?"
   "who won the cricket world cup?"
@@ -13,7 +17,7 @@ define user ask out of scope
   "weather today"
 
 define bot refuse out of scope
-  "I am strictly restricted to answering questions based solely on the provided ingested documents."
+  "I'm sorry, I can't respond to that."
 
 define flow
   user ask out of scope
