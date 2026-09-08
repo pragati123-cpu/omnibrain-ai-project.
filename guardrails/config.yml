@@ -1,0 +1,6 @@
+models: []
+
+rails:
+  input:
+    flows:
+      - handle outside scope
