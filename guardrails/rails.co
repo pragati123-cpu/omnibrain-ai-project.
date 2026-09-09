@@ -4,11 +4,28 @@ define user express greeting
   "hey"
 
 define bot express greeting
-  "Hello! I am your AI assistant. How can I help you with the provided documents?"
+  "Hello! I am OmniBrain, your AI-powered multi-modal document and RAG assistant. How can I help you analyze your documents, tables, or images today?"
 
 define flow
   user express greeting
   bot express greeting
+
+define user ask document
+  "summarize this document"
+  "summarize this document"
+  "what is the total amount"
+  "read the receipt"
+  "what is in the image"
+  "analyze this financial table"
+  "extract details from the receipt"
+  "what does the chart show"
+
+define bot answer document
+  "Processing your document and multi-modal data through OmniBrain agents."
+
+define flow
+  user ask document
+  bot answer document
 
 define user ask out of scope
   "what is the capital of France?"
@@ -17,7 +34,7 @@ define user ask out of scope
   "weather today"
 
 define bot refuse out of scope
-  "I'm sorry, I can't respond to that."
+  "I'm sorry, I can't respond to that. OmniBrain is restricted to analyzing ingested documents, financial tables, and uploaded images."
 
 define flow
   user ask out of scope
