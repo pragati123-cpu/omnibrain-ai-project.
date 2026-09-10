@@ -1,2 +1,11 @@
+<<<<<<< HEAD
 __pycache__/
 *.pyc
+=======
+venv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+.pytest_cache/
+>>>>>>> origin/shuaib_task3
