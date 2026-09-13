@@ -19,6 +19,14 @@ from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 
 from config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
+# Works both when run standalone (`cd agents && python search_agent.py`,
+# where `config` is a top-level module) and when imported as a package
+# from elsewhere (`from agents.search_agent import search_agent`, e.g.
+# from src/graph.py, where it must be `agents.config`).
+try:
+    from config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
+except ImportError:
+    from agents.config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
 
 # Lazy-loaded singletons -- avoids reloading the model / reconnecting
 # on every call if this module is imported once and reused (e.g. by

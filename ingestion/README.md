@@ -43,6 +43,7 @@ runs fully offline.
 ```bash
 cd ingestion
 python pipeline.py ../data/raw_pdfs/your_report.pdf
+python pipeline.py ../data/raw_pdfs/keac201.pdf
 ```
 
 Produces `data/manifest.json` plus the extracted image files in
