@@ -13,12 +13,30 @@ chunks into a final synthesis step.
 
 Requires: the `omnibrain_text` Qdrant collection already populated
 (via the teammate's ingest_to_qdrant.py).
+
+--- Week 3, Task 2: instrumented for latency tracking ---
+Split into two traced sub-steps (embedding vs. the actual Qdrant
+query) rather than tracing the whole function as one block, so
+latency data actually tells you WHICH part is slow -- e.g. a slow
+embedding model load on first call vs. a slow/overloaded Qdrant
+server are very different problems with very different fixes.
 """
 
 from sentence_transformers import SentenceTransformer
 from qdrant_client import QdrantClient
 
-from config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
+# Ensures the repo root is on sys.path so `from src.observability import
+# traced` resolves correctly regardless of HOW this file is run --
+# standalone (`cd agents && python search_agent.py`), imported as a
+# package (`from agents.search_agent import search_agent`), or via
+# pytest. Without this, `src` and `agents` are just sibling folders
+# with no reliable path relationship to each other.
+import sys
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 # Works both when run standalone (`cd agents && python search_agent.py`,
 # where `config` is a top-level module) and when imported as a package
 # from elsewhere (`from agents.search_agent import search_agent`, e.g.
@@ -27,6 +45,8 @@ try:
     from config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
 except ImportError:
     from agents.config import QDRANT_HOST, QDRANT_PORT, TEXT_COLLECTION, TEXT_EMBED_MODEL
+
+from src.observability import traced
 
 # Lazy-loaded singletons -- avoids reloading the model / reconnecting
 # on every call if this module is imported once and reused (e.g. by
@@ -49,17 +69,26 @@ def _get_client():
     return _client
 
 
-def search_agent(query: str, top_k: int = 3) -> dict:
+@traced("search_agent.embed_query", as_type="embedding")
+def _embed_query(query: str) -> list:
     model = _get_model()
+    return model.encode(query).tolist()
+
+
+@traced("search_agent.qdrant_query", as_type="retriever")
+def _query_qdrant(query_vector: list, top_k: int):
     client = _get_client()
-
-    query_vector = model.encode(query).tolist()
-
-    hits = client.query_points(
+    return client.query_points(
         collection_name=TEXT_COLLECTION,
         query=query_vector,
         limit=top_k,
     ).points
+
+
+@traced("search_agent", as_type="retriever")
+def search_agent(query: str, top_k: int = 3) -> dict:
+    query_vector = _embed_query(query)
+    hits = _query_qdrant(query_vector, top_k)
 
     results = [
         {

@@ -3,30 +3,23 @@ from langgraph.graph import StateGraph, START, END
 from src.state import AgentState
 from src.supervisor import supervisor_node
 from src.relevance_validator import validate_relevance_node
+from src.observability import traced
 from agents.search_agent import search_agent
 
 
+@traced("graph.worker_node", as_type="span")
 def worker_node(state: AgentState):
     """
-    Placeholder worker node.
-
-    This will later be replaced by actual agent nodes.
-    """
-
-    print("Worker is executing the task...")
-
-    return {
-        "current_agent": "worker",
-        "result": "Worker completed the task.",
     Retrieval step: calls the Search Agent against Qdrant for the
     current task/query.
 
-    CHANGED from the earlier placeholder (which just returned a
-    hardcoded string) to a real call into agents/search_agent.py --
-    Task 1 (relevance validation) has nothing to validate without
-    real retrieved data. This is a shared file; flag this change with
-    the team if anyone else is also wiring real agent calls into the
-    Supervisor's routing logic, to avoid duplicate/conflicting work.
+    Note: search_agent() itself is already traced internally (see
+    agents/search_agent.py), so this wraps the NODE as a whole --
+    giving a latency figure for "how long did the graph spend in this
+    node" as distinct from "how long did the underlying agent call
+    take", which matters if node-level overhead (state handling,
+    LangGraph's own bookkeeping) ever becomes worth measuring
+    separately from the agent call itself.
     """
     query = state.get("task", "")
     print(f"Worker retrieving for query: {query!r}")
@@ -60,10 +53,7 @@ def build_graph():
 
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("worker", worker_node)
-<<<<<<< HEAD
-=======
     graph.add_node("validate_relevance", validate_relevance_node)
->>>>>>> 27f39e588985873c86b11c98d5c0d08a4f048d4d
 
     # -------------------------
     # START → Supervisor
@@ -85,27 +75,10 @@ def build_graph():
     )
 
     # -------------------------
-<<<<<<< HEAD
-    # Worker → Supervisor
-    # -------------------------
-
-    graph.add_edge("worker", "supervisor")
-
-    return graph.compile()
-=======
     # Worker → Validate Relevance → Supervisor
-    #
-    # ADDED validate_relevance as an unconditional stop between
-    # retrieval and the Supervisor. It only ANNOTATES state
-    # (is_relevant / relevance_reason / relevance_score) -- it does
-    # not change routing itself. Task 2's rewriter/fallback agent is
-    # what should read is_relevant and decide whether to loop back
-    # for a retry; that logic doesn't exist yet and isn't added here,
-    # to keep Task 1 and Task 2's responsibilities cleanly separated.
     # -------------------------
 
     graph.add_edge("worker", "validate_relevance")
     graph.add_edge("validate_relevance", "supervisor")
 
     return graph.compile()
->>>>>>> 27f39e588985873c86b11c98d5c0d08a4f048d4d
