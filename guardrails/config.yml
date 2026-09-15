@@ -1,0 +1,25 @@
+models:
+  - type: main
+    engine: ollama
+    model: phi3
+
+rails:
+  input:
+    flows:
+      - self check input
+  output:
+    flows:
+      - self check output
+
+prompts:
+  - task: self_check_input
+    content: |
+      Your task is to check if the user message is safe and relevant to the allowed context.
+      User message: "{{ user_input }}"
+      Is this safe and relevant? Answer with yes or no.
+
+  - task: self_check_output
+    content: |
+      Your task is to check if the bot response is safe and relevant to the user message.
+      Bot response: "{{ bot_response }}"
+      Is this safe and relevant? Answer with yes or no.
