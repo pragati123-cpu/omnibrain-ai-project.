@@ -24,16 +24,37 @@ Flow:
     -> results returned
 
 Requires: OPENAI_API_KEY set in the environment.
+
+--- Week 3, Task 2: instrumented for latency tracking ---
+Split into two traced sub-steps: the GPT-4o SQL-generation call
+(usually the slow, network-bound part) vs. the local SQLite execution
+(usually fast) -- so a latency spike clearly points at "the LLM call
+is slow" vs. "the database query itself is slow", which need very
+different fixes.
 """
 
 import random
 import re
 import sqlite3
+import sys
 from datetime import date, timedelta
+from pathlib import Path
 
 from openai import OpenAI
 
-from config import STOCK_DB_PATH, OPENAI_MODEL_SQL
+# Ensures the repo root is on sys.path so `from src.observability import
+# traced` resolves regardless of how this file is invoked -- see the
+# matching comment in search_agent.py for the full explanation.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+try:
+    from config import STOCK_DB_PATH, OPENAI_MODEL_SQL
+except ImportError:
+    from agents.config import STOCK_DB_PATH, OPENAI_MODEL_SQL
+
+from src.observability import traced
 
 _openai_client = None
 
@@ -123,6 +144,7 @@ def build_sample_db(force: bool = False):
     print(f"Sample stock database created at {STOCK_DB_PATH} ({len(rows)} rows)")
 
 
+@traced("sql_agent.generate_sql", as_type="generation")
 def _generate_sql(query: str) -> str:
     openai_client = _get_openai()
     response = openai_client.chat.completions.create(
@@ -160,6 +182,19 @@ def _is_safe_select(sql: str) -> bool:
     return not any(word in normalized for word in forbidden)
 
 
+@traced("sql_agent.execute_query", as_type="tool")
+def _execute_sql(generated_sql: str) -> list:
+    conn = sqlite3.connect(STOCK_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    try:
+        cur.execute(generated_sql)
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+@traced("sql_agent", as_type="tool")
 def sql_agent(query: str) -> dict:
     build_sample_db()  # no-op if it already exists
 
@@ -175,14 +210,9 @@ def sql_agent(query: str) -> dict:
             "citations": [],
         }
 
-    conn = sqlite3.connect(STOCK_DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
     try:
-        cur.execute(generated_sql)
-        rows = [dict(r) for r in cur.fetchall()]
+        rows = _execute_sql(generated_sql)
     except sqlite3.Error as e:
-        conn.close()
         return {
             "agent": "sql",
             "query": query,
@@ -191,7 +221,6 @@ def sql_agent(query: str) -> dict:
             "results": [],
             "citations": [],
         }
-    conn.close()
 
     return {
         "agent": "sql",
@@ -204,7 +233,6 @@ def sql_agent(query: str) -> dict:
 
 if __name__ == "__main__":
     import json
-    import sys
 
     build_sample_db()
     query = sys.argv[1] if len(sys.argv) > 1 else "What was the closing price on 2025-03-14?"
