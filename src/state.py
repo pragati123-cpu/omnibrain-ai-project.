@@ -30,3 +30,5 @@ class AgentState(TypedDict):
     is_relevant: Optional[bool]            # relevance verdict for the current retrieval
     relevance_reason: Optional[str]        # human-readable explanation (for Task 5's UI)
     relevance_score: Optional[float]       # numeric signal (top Qdrant score), for tuning/debugging
+
+    visual_sources: list
